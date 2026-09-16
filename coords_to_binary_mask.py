@@ -1,19 +1,4 @@
-"""
-coords_to_binary_mask.py
----------------------------
-extract_coordinates.py로 뽑은 "좌표만 있는" json
-({"000001.jpg": [[[x,y],[x,y],...], [[...]]], ...})
-을 읽어서, 폴리곤 안쪽=검정(0), 바깥쪽=흰색(255)인 마스크 이미지를 만든다.
 
-이 좌표 json에는 이미지 크기(width/height) 정보가 없기 때문에,
-원본 이미지 폴더(--image_dir)에서 실제 이미지를 열어 크기를 읽어온다.
-
-설치:
-    pip install opencv-python numpy
-
-사용 예시:
-    python coords_to_binary_mask.py --coords_json ./coordinates.json --image_dir ./crawled/pear --out_dir ./masks
-"""
 
 import argparse
 import json
@@ -24,7 +9,7 @@ import numpy as np
 
 
 def make_mask_for_image(polygons: list, height: int, width: int) -> np.ndarray:
-    """폴리곤 점 목록들로 흑백(0/255) 마스크를 만든다. 폴리곤 안쪽=255(흰색), 바깥=0(검정)."""
+    # 어노테이션 점들로 흑백(0/255) 마스크 생성  /  안쪽=255(흰색), 바깥=0(검정)
     mask = np.full((height, width), 0, dtype=np.uint8)
     for points in polygons:
         if len(points) < 3:
@@ -61,16 +46,14 @@ def convert(coords_json_path: str, image_dir: str, out_dir: str):
 
     print(f"\n[완료] {converted}개 마스크 저장 -> '{out_dir}'")
     if skipped:
-        print(f"[경고] 원본 이미지를 못 찾아서 건너뛴 항목: {skipped}개")
+        print(f"[알림] 원본 이미지를 못 찾아서 건너뛴 항목: {skipped}개")
 
 
 def main():
     parser = argparse.ArgumentParser(description="좌표 json -> 흑백(0/255) 마스크 이미지 변환")
-    parser.add_argument("--coords_json", type=str, required=True,
-                         help="extract_coordinates.py로 만든 좌표만 있는 json 경로")
-    parser.add_argument("--image_dir", type=str, required=True,
-                         help="원본 이미지가 들어있는 폴더 (이미지 크기를 읽기 위해 필요)")
-    parser.add_argument("--out_dir", type=str, required=True, help="마스크 이미지를 저장할 폴더")
+    parser.add_argument("--coords_json", type=str, required=True)
+    parser.add_argument("--image_dir", type=str, required=True)
+    parser.add_argument("--out_dir", type=str, required=True)
     args = parser.parse_args()
 
     convert(args.coords_json, args.image_dir, args.out_dir)
