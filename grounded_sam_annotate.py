@@ -2,34 +2,6 @@
 grounded_sam_annotate.py
 --------------------------
 텍스트로 원하는 물체(예: "pear")만 지정해서 자동으로 찾아 마스킹하는 스크립트.
-
-동작 방식 (Grounded-SAM):
-    1. GroundingDINO(HuggingFace transformers 내장 버전)로 이미지에서
-       text_prompts에 해당하는 물체의 박스(bounding box)를 찾는다.
-    2. 그 박스를 SAM에 "여기를 정밀하게 세그멘테이션 해줘"라고 프롬프트로 준다.
-    3. SAM이 박스 안에서 정확한 픽셀 단위 마스크를 만든다.
-    => sam_annotate.py(전체 자동 마스킹)와 달리, 지정한 물체만 마스킹되어
-       labelme에서 지울 것이 훨씬 줄어든다.
-
-설치:
-    pip install torch torchvision
-    pip install git+https://github.com/facebookresearch/segment-anything.git
-    pip install transformers pillow opencv-python pycocotools numpy
-
-체크포인트 (SAM용):
-    vit_b (가장 작고 빠름, ~375MB): https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
-    vit_l (중간): https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth
-    vit_h (가장 정확, ~2.4GB): https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
-
-사용 예시:
-    python grounded_sam_annotate.py \
-        --image_dir ./crawled/pear \
-        --checkpoint sam_vit_b_01ec64.pth \
-        --model_type vit_b \
-        --text_prompts "pear" \
-        --out_dir ./annotations_pear \
-        --save_vis
-
 GroundingDINO 모델은 처음 실행할 때 HuggingFace에서 자동으로 다운로드됩니다 (인터넷 필요, 약 170MB).
 """
 
@@ -52,7 +24,6 @@ DEFAULT_DINO_MODEL = "IDEA-Research/grounding-dino-tiny"
 
 def load_detector(device: str, dino_model_id: str = DEFAULT_DINO_MODEL):
     """GroundingDINO 텍스트 기반 물체 검출기를 로드.
-
     Args:
         device: "cuda" 또는 "cpu"
         dino_model_id: HuggingFace Hub의 zero-shot-object-detection 모델 id
@@ -68,13 +39,6 @@ def load_detector(device: str, dino_model_id: str = DEFAULT_DINO_MODEL):
 
 
 def load_sam_predictor(checkpoint: str, model_type: str, device: str):
-    """box 프롬프트를 받아 정밀 마스크를 뽑아주는 SamPredictor를 로드.
-
-    Args:
-        checkpoint: SAM 체크포인트(.pth) 파일 경로
-        model_type: 체크포인트와 맞는 모델 크기 ("vit_b" | "vit_l" | "vit_h")
-        device: "cuda" 또는 "cpu"
-    """
     from segment_anything import sam_model_registry, SamPredictor
 
     if model_type not in sam_model_registry:
@@ -86,17 +50,7 @@ def load_sam_predictor(checkpoint: str, model_type: str, device: str):
 
 
 def detect_boxes(detector, image_pil: Image.Image, text_prompts: list, box_threshold: float):
-    """GroundingDINO로 text_prompts에 해당하는 박스들을 찾는다.
 
-    Args:
-        detector: load_detector()로 만든 파이프라인
-        image_pil: PIL Image (RGB)
-        text_prompts: 찾을 물체 이름 목록 (예: ["pear", "apple"])
-        box_threshold: 검출 확신도 임계값 (0~1). 낮을수록 더 많이(느슨하게) 검출됨.
-
-    Returns:
-        [{"label": str, "score": float, "bbox_xyxy": [x1,y1,x2,y2]}, ...]
-    """
     # GroundingDINO는 각 문구가 마침표로 끝나는 걸 권장함 (예: "a pear.")
     candidate_labels = [p.strip().rstrip(".") + "." for p in text_prompts]
 
@@ -160,15 +114,7 @@ def save_visualization(image_rgb: np.ndarray, masks_and_labels: list, save_path:
 
 
 def save_binary_mask(masks: list, height: int, width: int, save_path: str):
-    """
-    검출된 모든 마스크를 합쳐서 흑백(0/255) 이미지로 저장.
-    물체 영역 = 0(검정), 배경 = 255(흰색).
 
-    Args:
-        masks: bool 2D array(H, W)들의 리스트. 같은 이미지의 물체가 여러 개면 전부 합쳐진다.
-        height, width: 출력 마스크 크기 (원본 이미지와 동일해야 함)
-        save_path: 저장할 .png 경로
-    """
     combined = np.full((height, width), 255, dtype=np.uint8)
     for m in masks:
         combined[m] = 0
@@ -188,23 +134,7 @@ def annotate_folder(
     save_binary: bool = False,
     extensions: tuple = DEFAULT_EXTENSIONS,
 ):
-    """
-    image_dir 안의 모든 이미지에서 text_prompts에 해당하는 물체를 찾아 마스킹하고,
-    out_dir/annotations.json (COCO 형식)으로 저장한다.
 
-    Args:
-        image_dir: 원본 이미지가 들어있는 폴더
-        out_dir: 결과(annotations.json, 시각화, 이진마스크)를 저장할 폴더
-        checkpoint: SAM 체크포인트(.pth) 경로
-        text_prompts: 찾을 물체 이름 목록 (예: ["pear"])
-        model_type: SAM 모델 크기 ("vit_b" | "vit_l" | "vit_h")
-        device: "cuda" 또는 "cpu"
-        box_threshold: GroundingDINO 검출 확신도 임계값
-        dino_model: 사용할 GroundingDINO(zero-shot-object-detection) 모델 id
-        save_vis: True면 컬러 오버레이 시각화 이미지도 저장
-        save_binary: True면 물체=검정/배경=흰색 이진 마스크 PNG도 저장
-        extensions: 이미지로 인식할 파일 확장자
-    """
     os.makedirs(out_dir, exist_ok=True)
     vis_dir = os.path.join(out_dir, "visualizations")
     if save_vis:
@@ -292,31 +222,26 @@ def annotate_folder(
 
 def main():
     parser = argparse.ArgumentParser(description="Grounded-SAM: 텍스트로 지정한 물체만 자동 마스킹")
-    parser.add_argument("--image_dir", type=str, required=True, help="이미지가 들어있는 폴더")
-    parser.add_argument("--out_dir", type=str, default="./annotations_grounded", help="결과 저장 폴더")
-    parser.add_argument("--checkpoint", type=str, required=True, help="SAM 체크포인트(.pth) 경로")
+    parser.add_argument("--image_dir", type=str, required=True)
+    parser.add_argument("--out_dir", type=str, default="./annotations_grounded")
+    parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument(
-        "--model_type", type=str, default="vit_b", choices=["vit_b", "vit_l", "vit_h"],
-        help="체크포인트와 맞는 SAM 모델 크기"
+        "--model_type", type=str, default="vit_b", choices=["vit_b", "vit_l", "vit_h"]
     )
     parser.add_argument(
-        "--text_prompts", type=str, nargs="+", required=True,
-        help="찾고 싶은 물체 이름(들). 예: --text_prompts pear   또는  --text_prompts pear apple"
+        "--text_prompts", type=str, nargs="+", required=True
     )
-    parser.add_argument("--device", type=str, default="cpu", help="'cuda' (GPU 있을 때) 또는 'cpu'")
+    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument(
-        "--box_threshold", type=float, default=0.3,
-        help="검출 확신도 임계값 (0~1). 배경이나 엉뚱한 게 잡히면 0.4~0.5로 올려보세요."
+        "--box_threshold", type=float, default=0.3
     )
     parser.add_argument(
-        "--dino_model", type=str, default=DEFAULT_DINO_MODEL,
-        help="사용할 GroundingDINO(zero-shot-object-detection) HuggingFace 모델 id. "
+        "--dino_model", type=str, default=DEFAULT_DINO_MODEL
              f"기본값: {DEFAULT_DINO_MODEL} (더 정확한 'IDEA-Research/grounding-dino-base' 등으로 교체 가능)"
     )
-    parser.add_argument("--save_vis", action="store_true", help="시각화 이미지도 같이 저장")
+    parser.add_argument("--save_vis", action="store_true")
     parser.add_argument(
-        "--save_binary", action="store_true",
-        help="물체=검정(0), 배경=흰색(255)인 이진 마스크 PNG도 같이 저장"
+        "--save_binary", action="store_true"
     )
     args = parser.parse_args()
 
