@@ -1,16 +1,4 @@
-"""
-coco_to_labelme.py
---------------------
-SAM으로 만든 COCO 형식 annotations.json을 labelme 형식으로 변환한다.
-각 이미지마다 {이미지이름}.json 파일이 이미지와 같은 폴더에 생성되며,
-labelme에서 그 폴더를 열면 마스크가 폴리곤으로 겹쳐서 보인다.
 
-설치:
-    pip install labelme opencv-python pycocotools numpy
-
-사용 예시:
-    python coco_to_labelme.py --coco_json ./annotations/annotations.json --image_dir ./crawled/pear
-"""
 
 import argparse
 import json
@@ -21,7 +9,6 @@ import numpy as np
 
 
 def rle_to_polygons(rle: dict, epsilon_ratio: float = 0.002, min_points: int = 3):
-    """COCO RLE 마스크를 polygon 점 목록들로 변환 (분리된 영역이 있으면 여러 개 반환)."""
     from pycocotools import mask as mask_utils
 
     rle = dict(rle)  # 원본 훼손 방지
@@ -48,7 +35,6 @@ def rle_to_polygons(rle: dict, epsilon_ratio: float = 0.002, min_points: int = 3
 def convert(coco_json: str, image_dir: str, label_field: str = "category_id"):
     with open(coco_json, "r", encoding="utf-8") as f:
         coco = json.load(f)
-
     # category_id -> 이름 매핑
     cat_id_to_name = {c["id"]: c["name"] for c in coco.get("categories", [])}
 
@@ -96,14 +82,13 @@ def convert(coco_json: str, image_dir: str, label_field: str = "category_id"):
 
     print(f"[완료] {converted}개 이미지에 대해 labelme json 생성 완료 (out: '{image_dir}')")
     if skipped_no_image:
-        print(f"[경고] 이미지 파일을 못 찾아서 건너뛴 항목: {skipped_no_image}개")
+        print(f"[알림] 이미지 파일을 못 찾아서 건너뛴 항목: {skipped_no_image}개")
 
 
 def main():
     parser = argparse.ArgumentParser(description="COCO annotations.json -> labelme json 변환")
-    parser.add_argument("--coco_json", type=str, required=True, help="SAM이 만든 COCO 형식 json 경로")
-    parser.add_argument("--image_dir", type=str, required=True,
-                         help="이미지가 들어있는 폴더 (labelme json도 여기 같이 저장됨)")
+    parser.add_argument("--coco_json", type=str, required=True)
+    parser.add_argument("--image_dir", type=str, required=True)
     args = parser.parse_args()
 
     convert(args.coco_json, args.image_dir)
