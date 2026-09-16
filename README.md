@@ -139,7 +139,7 @@ python extract.py `
     --out_json ./coordinates.json
 ```
 
-RLE로 압축된 segmentation을 해독해서, 사람이 읽을 수 있는 폴리곤 좌표만 남깁니다.
+RLE로 압축된 segmentation을 읽어, 사람이 읽을 수 있는 좌표 부분만 추출합니다.
 
 ### 7. 흑백 마스크 이미지 생성 (선택)
 
