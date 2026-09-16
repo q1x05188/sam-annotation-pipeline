@@ -56,12 +56,12 @@ Invoke-WebRequest -Uri "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_
 ### 1. 이미지 크롤링
 
 ```bash
-python crawling_localization.py '
-    --keyword "pear" '
-    --out ./crawled '
-    --engine bing '
-    --max_num 100 '
-    --exclude_urls_json train_urls.json test_urls.json '
+python crawling_localization.py `
+    --keyword "pear" `
+    --out ./crawled `
+    --engine bing `
+    --max_num 100 `
+    --exclude_urls_json train_urls.json test_urls.json `
     --record_urls_json crawled_urls.json
 ```
 
@@ -72,13 +72,13 @@ python crawling_localization.py '
 여러 검색어를 한 번에 크롤링하려면 `--use_contexts`와 `--contexts`를 사용합니다:
 
 ```bash
-python crawling_localization.py '
-    --use_contexts '
-    --contexts "pear" "pear with other fruits" '
-    --out ./crawled '
-    --engine bing '
-    --max_num_per_context 100 '
-    --exclude_urls_json train_urls.json test_urls.json '
+python crawling_localization.py `
+    --use_contexts `
+    --contexts "pear" "pear with other fruits" `
+    --out ./crawled `
+    --engine bing `
+    --max_num_per_context 100 `
+    --exclude_urls_json train_urls.json test_urls.json `
     --record_urls_json crawled_urls.json
 ```
 
@@ -89,12 +89,12 @@ python crawling_localization.py '
 ### 2. 자동 어노테이션 생성 (Grounded-SAM)
 
 ```bash
-python grounded_sam_annotate.py '
-    --image_dir ./crawled/pear '
-    --checkpoint sam_vit_b_01ec64.pth '
-    --model_type vit_b '
-    --text_prompts "pear" '
-    --out_dir ./annotations_pear '
+python grounded_sam_annotate.py `
+    --image_dir ./crawled/pear `
+    --checkpoint sam_vit_b_01ec64.pth `
+    --model_type vit_b `
+    --text_prompts "pear" `
+    --out_dir ./annotations_pear `
     --save_vis
 ```
 
@@ -105,8 +105,8 @@ python grounded_sam_annotate.py '
 ### 3. labelme 형식으로 변환
 
 ```bash
-python coco_to_labelme.py '
-    --coco_json ./annotations_pear/annotations.json '
+python coco_to_labelme.py `
+    --coco_json ./annotations_pear/annotations.json `
     --image_dir ./crawled/pear
 ```
 
@@ -123,8 +123,8 @@ labelme ./crawled/pear
 ### 5. 최종 COCO 데이터셋으로 재변환
 
 ```bash
-python labelme_to_coco.py '
-    --image_dir ./crawled/pear '
+python labelme_to_coco.py `
+    --image_dir ./crawled/pear `
     --out_json ./annotations_pear/annotations_edited.json
 ```
 
@@ -133,8 +133,8 @@ python labelme_to_coco.py '
 ### 6. 좌표만 추출 (선택)
 
 ```bash
-python extract.py '
-    --coco_json ./annotations_pear/annotations_edited.json '
+python extract.py `
+    --coco_json ./annotations_pear/annotations_edited.json `
     --out_json ./coordinates.json
 ```
 
@@ -143,9 +143,9 @@ RLE로 압축된 segmentation을 해독해서, 사람이 읽을 수 있는 폴�
 ### 7. 흑백 마스크 이미지 생성 (선택)
 
 ```bash
-python coords_to_binary_mask.py '
-    --coords_json ./coordinates.json '
-    --image_dir ./crawled/pear '
+python coords_to_binary_mask.py `
+    --coords_json ./coordinates.json `
+    --image_dir ./crawled/pear `
     --out_dir ./masks
 ```
 
