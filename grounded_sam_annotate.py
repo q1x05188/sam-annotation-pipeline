@@ -237,7 +237,6 @@ def main():
     )
     parser.add_argument(
         "--dino_model", type=str, default=DEFAULT_DINO_MODEL
-             f"기본값: {DEFAULT_DINO_MODEL} (더 정확한 'IDEA-Research/grounding-dino-base' 등으로 교체 가능)"
     )
     parser.add_argument("--save_vis", action="store_true")
     parser.add_argument(
