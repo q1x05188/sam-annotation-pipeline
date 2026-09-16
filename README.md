@@ -69,6 +69,23 @@ python crawling_localization.py \
 - `--record_urls_json`: 이번에 새로 받은 URL을 기록 (다음 실행 때 exclude 목록에 추가해서 누적 관리)
 - 여러 검색어(맥락)를 한 번에 돌리려면 `--use_contexts --contexts "pear" "pear on a tree" "sliced pear"` 사용
 
+여러 검색어를 한 번에 크롤링하려면 `--use_contexts`와 `--contexts`를 사용합니다:
+
+```bash
+python crawling_localization.py \
+    --use_contexts \
+    --contexts "pear" "apple" "banana" \
+    --out ./crawled \
+    --engine bing \
+    --max_num_per_context 100 \
+    --exclude_urls_json train_urls.json test_urls.json \
+    --record_urls_json crawled_urls.json
+```
+
+- `--contexts`에 적은 검색어마다 `./crawled/pear`, `./crawled/apple`, `./crawled/banana` 처럼 하위 폴더가 자동 생성됩니다.
+- `--max_num_per_context`는 검색어 **하나당** 최대 다운로드 개수입니다 (전체 합계가 아님).
+
+
 ### 2. 자동 어노테이션 생성 (Grounded-SAM)
 
 ```bash
