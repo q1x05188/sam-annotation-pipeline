@@ -74,7 +74,7 @@ python crawling_localization.py \
 ```bash
 python crawling_localization.py \
     --use_contexts \
-    --contexts "pear" "apple" "banana" \
+    --contexts "pear" "pear with other fruits" \
     --out ./crawled \
     --engine bing \
     --max_num_per_context 100 \
