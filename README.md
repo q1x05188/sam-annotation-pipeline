@@ -46,7 +46,7 @@ pip install git+https://github.com/facebookresearch/segment-anything.git
 SAM 체크포인트(모델 가중치)는 용량이 커서 저장소에 포함하지 않았습니다. 아래에서 받아 프로젝트 루트에 둡니다.
 
 ```
-https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+Invoke-WebRequest -Uri "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth" -OutFile "sam_vit_b_01ec64.pth"
 ```
 
 ## 사용법
