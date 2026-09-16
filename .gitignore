@@ -1,0 +1,22 @@
+# SAM 체크포인트 (용량 크고 공식 링크에서 받을 수 있음)
+*.pth
+
+# 크롤링/어노테이션 결과물 (저작권 + 용량 문제로 제외)
+crawled/
+crawled_images/
+annotations_*/
+masks/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# OS/에디터
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

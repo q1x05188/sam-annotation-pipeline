@@ -1,0 +1,232 @@
+# SAM 기반 이미지 자동 어노테이션 파이프라인
+
+웹에서 이미지를 수집하고, Grounded-SAM(GroundingDINO + SAM)으로 자동 세그멘테이션 어노테이션을 만든 뒤,
+labelme로 수동 보정하고, COCO 형식 데이터셋과 흑백 마스크 이미지로 최종 변환하는 파이프라인입니다.
+
+## 전체 파이프라인
+
+```
+1. 이미지 크롤링          (crawling_localization.py)
+        │
+        ▼
+2. 자동 어노테이션 생성     (grounded_sam_annotate.py)   → annotations.json (COCO 형식)
+        │
+        ▼
+3. labelme 형식으로 변환   (coco_to_labelme.py)          → 이미지별 {이름}.json 생성
+        │
+        ▼
+4. labelme GUI로 수동 보정  (직접 작업, 코드 없음)
+        │
+        ▼
+5. 다시 COCO로 합치기      (labelme_to_coco.py)          → annotations_edited.json (최종 데이터셋)
+        │
+        ├──▶ 6. 좌표만 추출        (extract.py)           → coordinates.json
+        │           │
+        │           ▼
+        └──▶ 7. 흑백 마스크 생성    (coords_to_binary_mask.py) → *.png (물체/배경 마스크)
+```
+
+## 요구 사항
+
+- Python 3.10 이상
+- (선택) NVIDIA GPU + CUDA — 없어도 CPU로 동작하지만 2단계(자동 어노테이션)가 느립니다.
+
+## 설치
+
+```bash
+pip install -r requirements.txt
+```
+
+`segment-anything`은 pip 공식 배포가 없어 GitHub에서 직접 설치합니다:
+
+```bash
+pip install git+https://github.com/facebookresearch/segment-anything.git
+```
+
+SAM 체크포인트(모델 가중치)는 용량이 커서 저장소에 포함하지 않았습니다. 아래에서 받아 프로젝트 루트에 둡니다.
+
+```
+https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+```
+
+## 사용법
+
+아래는 "pear"를 예시로 한 전체 실행 순서입니다. 원하는 키워드로 바꿔서 쓰면 됩니다.
+
+### 1. 이미지 크롤링
+
+```bash
+python crawling_localization.py \
+    --keyword "pear" \
+    --out ./crawled \
+    --engine bing \
+    --max_num 100 \
+    --exclude_urls_json train_urls.json test_urls.json \
+    --record_urls_json crawled_urls.json
+```
+
+- `--exclude_urls_json`: 이미 보유한 URL은 다시 받지 않음
+- `--record_urls_json`: 이번에 새로 받은 URL을 기록 (다음 실행 때 exclude 목록에 추가해서 누적 관리)
+- 여러 검색어(맥락)를 한 번에 돌리려면 `--use_contexts --contexts "pear" "pear on a tree" "sliced pear"` 사용
+
+### 2. 자동 어노테이션 생성 (Grounded-SAM)
+
+```bash
+python grounded_sam_annotate.py \
+    --image_dir ./crawled/pear \
+    --checkpoint sam_vit_b_01ec64.pth \
+    --model_type vit_b \
+    --text_prompts "pear" \
+    --out_dir ./annotations_pear \
+    --save_vis
+```
+
+- `--text_prompts`로 지정한 물체만 찾아서 마스킹합니다 (SAM 혼자서는 텍스트로 클래스를 지정할 수 없어서, GroundingDINO가 위치를 먼저 찾고 SAM이 정밀 분할하는 구조)
+- `--save_vis`: 결과를 눈으로 확인할 수 있는 컬러 오버레이 이미지도 같이 저장
+- 결과: `./annotations_pear/annotations.json` (COCO 형식)
+
+### 3. labelme 형식으로 변환
+
+```bash
+python coco_to_labelme.py \
+    --coco_json ./annotations_pear/annotations.json \
+    --image_dir ./crawled/pear
+```
+
+`./crawled/pear` 폴더 안에 이미지별 `{이름}.json`(labelme 형식)이 생성됩니다.
+
+### 4. labelme로 수동 보정
+
+```bash
+labelme ./crawled/pear
+```
+
+잘못 잡힌 마스크는 삭제하고, 놓친 물체는 AI-Assisted Annotation(Point 도구)으로 클릭 몇 번으로 추가합니다.
+
+### 5. 최종 COCO 데이터셋으로 재변환
+
+```bash
+python labelme_to_coco.py \
+    --image_dir ./crawled/pear \
+    --out_json ./annotations_pear/annotations_edited.json
+```
+
+이 파일이 실제 학습에 사용할 최종 어노테이션입니다.
+
+### 6. 좌표만 추출 (선택)
+
+```bash
+python extract.py \
+    --coco_json ./annotations_pear/annotations_edited.json \
+    --out_json ./coordinates.json
+```
+
+RLE로 압축된 segmentation을 해독해서, 사람이 읽을 수 있는 폴리곤 좌표만 남깁니다.
+
+### 7. 흑백 마스크 이미지 생성 (선택)
+
+```bash
+python coords_to_binary_mask.py \
+    --coords_json ./coordinates.json \
+    --image_dir ./crawled/pear \
+    --out_dir ./masks
+```
+
+물체 영역과 배경을 흑/백으로 구분한 `.png` 마스크를 이미지별로 생성합니다.
+
+## 스크립트별 옵션 상세
+
+### 1. `crawling_localization.py`
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--keyword` | - | 검색할 단일 키워드 |
+| `--keywords_file` | - | 한 줄에 하나씩 키워드가 적힌 txt 파일 (일괄 처리) |
+| `--use_contexts` / `--contexts` | - | 여러 검색어(맥락)를 직접 리스트로 지정해 각각 크롤링 |
+| `--max_num_per_context` | `--max_num` 값 | `--use_contexts` 사용 시 맥락당 최대 개수 |
+| `--out` | `./crawled_images` | 저장 상위 폴더 |
+| `--max_num` | `100` | 검색어당 최대 다운로드 개수 |
+| `--engine` | `google` | `google` / `bing` / `baidu` |
+| `--threads` | `4` | 동시 다운로드 스레드 수 |
+| `--min_w`, `--min_h` | `200`, `200` | 최소 이미지 크기(px), `0`이면 필터링 끔 |
+| `--exclude_urls_json` | - | 이미 보유한 URL 목록 json (여러 개 지정 가능) |
+| `--record_urls_json` | - | 새로 받은 URL을 기록할 json (누적 저장) |
+
+### 2. `grounded_sam_annotate.py`
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--image_dir` | (필수) | 이미지가 들어있는 폴더 |
+| `--out_dir` | `./annotations_grounded` | 결과 저장 폴더 |
+| `--checkpoint` | (필수) | SAM 체크포인트(.pth) 경로 |
+| `--model_type` | `vit_b` | `vit_b` / `vit_l` / `vit_h` (체크포인트와 일치해야 함) |
+| `--text_prompts` | (필수) | 찾을 물체 이름(들), 공백으로 여러 개 구분 |
+| `--device` | `cpu` | `cuda` 또는 `cpu` |
+| `--box_threshold` | `0.3` | 검출 확신도 임계값(0~1). 엉뚱한 게 잡히면 0.4~0.5로 상향 |
+| `--dino_model` | `IDEA-Research/grounding-dino-tiny` | 사용할 GroundingDINO HuggingFace 모델 id |
+| `--save_vis` | 꺼짐 | 컬러 오버레이 시각화 이미지 저장 |
+| `--save_binary` | 꺼짐 | 물체=검정/배경=흰색 이진 마스크 PNG 저장 |
+
+### 3. `coco_to_labelme.py`
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--coco_json` | (필수) | 변환할 COCO 형식 json 경로 |
+| `--image_dir` | (필수) | 이미지 폴더 (labelme json도 여기 같이 저장됨) |
+
+### 5. `labelme_to_coco.py`
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--image_dir` | (필수) | labelme json + 이미지가 들어있는 폴더 |
+| `--out_json` | (필수) | 저장할 COCO json 경로 |
+| `--default_category` | `object` | label이 비어있는 shape에 대신 쓸 카테고리 이름 |
+
+### 6. `extract.py`
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--coco_json` | (필수) | 좌표를 뽑아낼 원본 COCO json |
+| `--out_json` | (필수) | 좌표만 저장할 json 경로 |
+
+### 7. `coords_to_binary_mask.py`
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--coords_json` | (필수) | `extract.py`로 만든 좌표 json |
+| `--image_dir` | (필수) | 원본 이미지 폴더 (마스크 크기를 읽어오는 용도) |
+| `--out_dir` | (필수) | 마스크 PNG 저장 폴더 |
+
+각 스크립트는 `python 스크립트명.py --help`로도 옵션 설명을 바로 볼 수 있습니다.
+
+## 폴더 구조 예시
+
+```
+.
+├── crawling_localization.py
+├── grounded_sam_annotate.py
+├── coco_to_labelme.py
+├── labelme_to_coco.py
+├── extract.py
+├── coords_to_binary_mask.py
+├── requirements.txt
+├── README.md
+├── train_urls.json          # 기존 보유 URL 목록 (예시)
+├── test_urls.json
+├── sam_vit_b_01ec64.pth     # 체크포인트 (git에는 올리지 않음, 아래 .gitignore 참고)
+└── crawled/                 # 크롤링 결과 (git에는 올리지 않음)
+    └── pear/
+        ├── 000001.jpg
+        ├── 000001.json      # labelme 어노테이션
+        └── ...
+```
+
+## 주의 사항
+
+- **체크포인트(.pth) 파일은 GitHub에 올리지 않습니다.** 수백 MB~수 GB라 저장소 용량 제한에 걸리고, 어차피 공식 링크에서 누구나 받을 수 있습니다.
+- **크롤링한 이미지도 기본적으로 올리지 않습니다.** 저작권이 있는 이미지가 섞여 있을 수 있고, 용량도 큽니다. 대신 `crawled_urls.json`처럼 URL 기록만 공유하면 됩니다.
+- GitHub는 파일 하나당 100MB 제한이 있습니다. 그보다 큰 파일을 올려야 한다면 [Git LFS](https://git-lfs.com/)를 사용하세요.
+
+## 라이선스
+
+TODO: 원하는 라이선스를 선택하세요 (예: MIT, Apache-2.0). GitHub 저장소 생성 시 자동으로 추가할 수 있습니다.

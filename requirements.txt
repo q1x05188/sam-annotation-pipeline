@@ -1,0 +1,21 @@
+# 크롤링 (crawling_localization.py)
+icrawler
+pillow
+
+# SAM / Grounded-SAM (grounded_sam_annotate.py)
+torch
+torchvision
+transformers
+accelerate
+opencv-python
+numpy
+pycocotools
+matplotlib
+# segment-anything은 PyPI에 없어 아래 명령으로 따로 설치하세요:
+#   pip install git+https://github.com/facebookresearch/segment-anything.git
+
+# labelme 수동 보정
+labelme
+
+# HuggingFace 게이트 모델(예: SAM3) 접근 시 필요
+huggingface_hub
