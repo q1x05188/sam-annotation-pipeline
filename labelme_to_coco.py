@@ -3,16 +3,6 @@ labelme_to_coco.py
 --------------------
 labelme로 수정한 이미지별 {이름}.json 파일들을 모아서
 다시 COCO 형식 annotations.json으로 합친다.
-
-카테고리(라벨)는 labelme에서 각 폴리곤에 붙인 label 값을 그대로 사용하며,
-등장하는 순서대로 category_id가 자동 부여된다. labelme에서 label을 하나도
-안 남긴(빈) shape은 --default_category 값으로 대체된다.
-
-설치:
-    pip install opencv-python pycocotools numpy
-
-사용 예시:
-    python labelme_to_coco.py --image_dir ./crawled/pear --out_json ./annotations/annotations_edited.json
 """
 
 import argparse
@@ -24,15 +14,7 @@ import numpy as np
 
 
 def polygon_to_rle(points: list, height: int, width: int):
-    """polygon 점 목록을 COCO RLE 마스크로 변환.
 
-    Args:
-        points: [[x1,y1],[x2,y2],...] 형태의 폴리곤 좌표
-        height, width: 이미지 크기 (마스크 캔버스 크기와 동일해야 함)
-
-    Returns:
-        (rle, area, bbox): COCO 형식 RLE 딕셔너리, 넓이(px), bbox [x,y,w,h]
-    """
     import cv2
     from pycocotools import mask as mask_utils
 
@@ -48,14 +30,7 @@ def polygon_to_rle(points: list, height: int, width: int):
 
 
 def convert(image_dir: str, out_json: str, default_category: str = "object"):
-    """
-    image_dir 안의 모든 labelme json({이름}.json)을 모아 COCO 형식으로 합쳐 out_json에 저장한다.
 
-    Args:
-        image_dir: labelme json 파일들(및 원본 이미지)이 들어있는 폴더
-        out_json: 저장할 COCO 형식 json 경로 (상위 폴더가 없으면 자동 생성)
-        default_category: shape에 label이 비어있을 때 대신 쓸 카테고리 이름
-    """
     json_files = sorted(Path(image_dir).glob("*.json"))
     if not json_files:
         print(f"[경고] '{image_dir}'에서 labelme json 파일을 찾지 못했습니다.")
@@ -131,12 +106,10 @@ def convert(image_dir: str, out_json: str, default_category: str = "object"):
 
 def main():
     parser = argparse.ArgumentParser(description="labelme json들 -> COCO annotations.json 변환")
-    parser.add_argument("--image_dir", type=str, required=True,
-                         help="labelme json 파일들(및 이미지)이 들어있는 폴더")
-    parser.add_argument("--out_json", type=str, required=True, help="저장할 COCO json 경로")
+    parser.add_argument("--image_dir", type=str, required=True)
+    parser.add_argument("--out_json", type=str, required=True)
     parser.add_argument(
-        "--default_category", type=str, default="object",
-        help="labelme shape에 label이 비어있을 때 대신 사용할 카테고리 이름 (기본값: 'object')"
+        "--default_category", type=str, default="object"
     )
     args = parser.parse_args()
 
