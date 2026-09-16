@@ -1,24 +1,4 @@
-"""
-extract_coordinates.py
--------------------------
-COCO 형식 annotations.json에서 RLE로 압축된 segmentation을 해독해서,
-순수 좌표(폴리곤 점 목록)만 뽑아 별도 json으로 저장한다.
 
-출력 형식:
-{
-  "000001.jpg": [
-    [[x1,y1],[x2,y2],[x3,y3], ...],   # 물체 1의 윤곽선 좌표
-    [[x1,y1],[x2,y2], ...]            # 물체 2의 윤곽선 좌표
-  ],
-  "000007.jpg": [ ... ]
-}
-
-설치:
-    pip install opencv-python pycocotools numpy
-
-사용 예시:
-    python extract_coordinates.py --coco_json ./annotations/annotations.json --out_json ./coordinates.json
-"""
 
 import argparse
 import json
@@ -28,7 +8,6 @@ import numpy as np
 
 
 def rle_to_polygons(rle: dict, epsilon_ratio: float = 0.002, min_points: int = 3):
-    """COCO RLE 마스크를 polygon 점 목록들로 변환 (분리된 영역이 있으면 여러 개 반환)."""
     from pycocotools import mask as mask_utils
 
     rle = dict(rle)
@@ -80,8 +59,8 @@ def extract(coco_json_path: str, out_json_path: str):
 
 def main():
     parser = argparse.ArgumentParser(description="COCO json -> 좌표(폴리곤 점)만 추출")
-    parser.add_argument("--coco_json", type=str, required=True, help="원본 COCO 형식 annotations.json 경로")
-    parser.add_argument("--out_json", type=str, required=True, help="좌표만 저장할 json 경로")
+    parser.add_argument("--coco_json", type=str, required=True)
+    parser.add_argument("--out_json", type=str, required=True)
     args = parser.parse_args()
 
     extract(args.coco_json, args.out_json)
