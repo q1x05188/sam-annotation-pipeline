@@ -81,7 +81,8 @@ python crawling_localization.py `
     --exclude_urls_json train_urls.json test_urls.json `
     --record_urls_json crawled_urls.json
 ```
-
+- `--exclude_urls_json train_urls.json test_urls.json`은 예시이므로 초기엔 지우고 사용하였다가
+- 만들어진 url 링크 json 파일명으로 재사용하면서 누적하면 됩니다.
 - `--contexts`에 적은 검색어마다 `./crawled/pear`, `./crawled/apple`, `./crawled/banana` 처럼 하위 폴더가 자동 생성됩니다.
 - `--max_num_per_context`는 검색어 **하나당** 최대 다운로드 개수입니다 (전체 합계가 아님).
 
