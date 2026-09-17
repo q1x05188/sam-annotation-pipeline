@@ -3,6 +3,14 @@
 웹에서 이미지를 수집하고, Grounded-SAM(GroundingDINO + SAM)으로 자동 세그멘테이션 어노테이션을 만든 뒤,
 labelme(GUI 툴)로 수동 보정하고, COCO 형식 데이터셋과 흑백(0,255) 마스크 이미지로 최종 변환하는 파이프라인입니다.
 
+
+<img width="400" height="300" alt="Image" src="https://github.com/user-attachments/assets/578a6820-df21-4df3-befb-9b7fb36748ce" />
+
+<img width="400" height="300" alt="Image" src="https://github.com/user-attachments/assets/c2c0fb28-a039-445a-9900-0ec532f09863" />
+
+
+
+
 ## 전체 파이프라인
 
 ```
@@ -81,7 +89,8 @@ python crawling_localization.py `
     --exclude_urls_json train_urls.json test_urls.json `
     --record_urls_json crawled_urls.json
 ```
-
+- `--exclude_urls_json train_urls.json test_urls.json`은 예시이므로 초기엔 지우고 사용하였다가
+- 만들어진 url 링크 json 파일명으로 재사용하면서 누적하면 됩니다.
 - `--contexts`에 적은 검색어마다 `./crawled/pear`, `./crawled/apple`, `./crawled/banana` 처럼 하위 폴더가 자동 생성됩니다.
 - `--max_num_per_context`는 검색어 **하나당** 최대 다운로드 개수입니다 (전체 합계가 아님).
 
@@ -138,7 +147,7 @@ python extract.py `
     --out_json ./coordinates.json
 ```
 
-RLE로 압축된 segmentation을 해독해서, 사람이 읽을 수 있는 폴리곤 좌표만 남깁니다.
+RLE로 압축된 segmentation을 읽어, 사람이 읽을 수 있는 좌표 부분만 추출합니다.
 
 ### 7. 흑백 마스크 이미지 생성 (선택)
 
