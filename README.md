@@ -4,9 +4,9 @@
 labelme(GUI 툴)로 수동 보정하고, COCO 형식 데이터셋과 흑백(0,255) 마스크 이미지로 최종 변환하는 파이프라인입니다.
 
 
-<img width="1500" height="1125" alt="Image" src="https://github.com/user-attachments/assets/578a6820-df21-4df3-befb-9b7fb36748ce" />
+<img width="400" height="300" alt="Image" src="https://github.com/user-attachments/assets/578a6820-df21-4df3-befb-9b7fb36748ce" />
 
-<img width="1500" height="1125" alt="Image" src="https://github.com/user-attachments/assets/c2c0fb28-a039-445a-9900-0ec532f09863" />
+<img width="400" height="300" alt="Image" src="https://github.com/user-attachments/assets/c2c0fb28-a039-445a-9900-0ec532f09863" />
 
 
 
