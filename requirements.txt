@@ -1,8 +1,12 @@
-# 크롤링 (crawling_localization.py)
+# 0. 검색어 자동 생성 (generate_queries.py, 선택)
+openai          # --provider openai 쓸 경우
+anthropic       # --provider anthropic 쓸 경우
+
+# 1. 크롤링 (crawling_localization.py)
 icrawler
 pillow
 
-# SAM / Grounded-SAM (grounded_sam_annotate.py)
+# 2. CLIP 필터링 (clip_filter.py) / 3. Grounded-SAM (grounded_sam_annotate.py)
 torch
 torchvision
 transformers
@@ -14,7 +18,7 @@ matplotlib
 # segment-anything은 PyPI에 없어 아래 명령으로 따로 설치하세요:
 #   pip install git+https://github.com/facebookresearch/segment-anything.git
 
-# labelme 수동 보정
+# 5. labelme 수동 보정
 labelme
 
 # HuggingFace 게이트 모델(예: SAM3) 접근 시 필요
