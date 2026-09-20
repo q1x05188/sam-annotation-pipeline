@@ -3,7 +3,7 @@
 웹에서 이미지를 수집하고, CLIP으로 품질을 검증하고, Grounded-SAM(GroundingDINO + SAM)으로 자동 세그멘테이션 어노테이션을 만든 뒤,
 labelme(GUI 툴)로 수동 보정하고, COCO 형식 데이터셋과 흑백(0,255) 마스크 이미지로 최종 변환하는 파이프라인입니다.
 
-검색어 생성(0단계)과 CLIP 필터링(2단계)은 "See & Sniff" (ECCV 2026) 논문의 SmellNet-V 데이터 구축 방법론(LLM 기반 검색어 생성 + CLIP prompt-based verification)을 참고했습니다.
+keyward, clip 필터링 부분은 "See & Sniff" (ECCV 2026) 논문의 SmellNet-V 데이터 구축 방법론(LLM 기반 검색어 생성 + CLIP prompt-based verification)을 참고했습니다.
 
 
 <img width="400" height="300" alt="Image" src="https://github.com/user-attachments/assets/578a6820-df21-4df3-befb-9b7fb36748ce" />
@@ -242,41 +242,6 @@ python coords_to_binary_mask.py `
 | `--image_dir` | (필수) | labelme json + 이미지가 들어있는 폴더 |
 | `--out_json` | (필수) | 저장할 COCO json 경로 |
 | `--default_category` | `object` | label이 비어있는 shape에 대신 쓸 카테고리 이름 |
-
-### 6. `extract.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--coco_json` | (필수) | 좌표를 뽑아낼 원본 COCO json |
-| `--out_json` | (필수) | 좌표만 저장할 json 경로 |
-
-### 7. `coords_to_binary_mask.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--coords_json` | (필수) | `extract.py`로 만든 좌표 json |
-| `--image_dir` | (필수) | 원본 이미지 폴더 (마스크 크기를 읽어오는 용도) |
-| `--out_dir` | (필수) | 마스크 PNG 저장 폴더 |
-
-### 8. `clip_filter.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--image_dir` | (필수) | 검사할 이미지 폴더 |
-| `--keyword` | (필수) | 프롬프트의 `{category}` 자리에 들어갈 물체/재료 이름 |
-| `--clip_model` | `openai/clip-vit-large-patch14` | 사용할 HuggingFace CLIP 모델 id |
-| `--device` | 자동 감지 | `cuda` 또는 `cpu` |
-| `--move_to` | `rejected` | 탈락한 이미지를 옮길 하위 폴더 이름 |
-| `--dry_run` | 꺼짐 | 실제로 옮기지 않고 결과만 미리 확인 |
-| `--margin` | `0.0` | 판정 여유값. `0`=논문 원문(엄격), 올릴수록 느슨해짐 (예: `2.0`) |
-| `--min_tests_passed` | 전부(3개) | 3개(category/photorealism/freshness) 중 몇 개만 통과해도 인정할지 |
-| `--negative_agg` | `max` | negative가 여러 개인 테스트에서 `max`(엄격, 논문 원문) 또는 `mean`(느슨) |
-| `--skip_tests` | 없음 | 판정에서 아예 제외할 테스트 이름(들) |
-| `--verbose` | 꺼짐 | 이미지마다 positive/negative 실제 점수를 전부 출력 (margin 정할 때 참고용) |
-
-가장 효과적인 손잡이는 `--margin`이고, 몇으로 줄지는 `--dry_run --verbose`로 나온 점수 차이
-분포를 보고 정하는 걸 권장합니다 (감으로 정하지 말 것). `check_logit_scale.py`로 사용 중인
-CLIP 모델의 점수 스케일(이론적 최대/최소)도 미리 확인할 수 있습니다.
 
 ## 참고 문헌
 
