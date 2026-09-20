@@ -195,54 +195,6 @@ python coords_to_binary_mask.py `
 
 물체 영역과 배경을 흑/백으로 구분한 `.png` 마스크를 이미지별로 생성합니다.
 
-## 스크립트별 옵션 상세
-
-### 1. `crawling_localization.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--keyword` | - | 검색할 단일 키워드 |
-| `--keywords_file` | - | 한 줄에 하나씩 키워드가 적힌 txt 파일 (일괄 처리) |
-| `--use_contexts` / `--contexts` | - | 여러 검색어(맥락)를 직접 리스트로 지정해 각각 크롤링 |
-| `--max_num_per_context` | `--max_num` 값 | `--use_contexts` 사용 시 맥락당 최대 개수 |
-| `--out` | `./crawled_images` | 저장 상위 폴더 |
-| `--max_num` | `100` | 검색어당 최대 다운로드 개수 |
-| `--engine` | `google` | `google` / `bing` / `baidu` |
-| `--threads` | `4` | 동시 다운로드 스레드 수 |
-| `--min_w`, `--min_h` | `200`, `200` | 최소 이미지 크기(px), `0`이면 필터링 끔 |
-| `--exclude_urls_json` | - | 이미 보유한 URL 목록 json (여러 개 지정 가능) |
-| `--record_urls_json` | - | 새로 받은 URL을 기록할 json (누적 저장) |
-
-### 2. `grounded_sam_annotate.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--image_dir` | (필수) | 이미지가 들어있는 폴더 |
-| `--out_dir` | `./annotations_grounded` | 결과 저장 폴더 |
-| `--checkpoint` | (필수) | SAM 체크포인트(.pth) 경로 |
-| `--model_type` | `vit_b` | `vit_b` / `vit_l` / `vit_h` (체크포인트와 일치해야 함) |
-| `--text_prompts` | (필수) | 찾을 물체 이름(들), 공백으로 여러 개 구분 |
-| `--device` | `cpu` | `cuda` 또는 `cpu` |
-| `--box_threshold` | `0.3` | 검출 확신도 임계값(0~1). 엉뚱한 게 잡히면 0.4~0.5로 상향 |
-| `--dino_model` | `IDEA-Research/grounding-dino-tiny` | 사용할 GroundingDINO HuggingFace 모델 id |
-| `--save_vis` | 꺼짐 | 컬러 오버레이 시각화 이미지 저장 |
-| `--save_binary` | 꺼짐 | 물체=검정/배경=흰색 이진 마스크 PNG 저장 |
-
-### 3. `coco_to_labelme.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--coco_json` | (필수) | 변환할 COCO 형식 json 경로 |
-| `--image_dir` | (필수) | 이미지 폴더 (labelme json도 여기 같이 저장됨) |
-
-### 5. `labelme_to_coco.py`
-
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `--image_dir` | (필수) | labelme json + 이미지가 들어있는 폴더 |
-| `--out_json` | (필수) | 저장할 COCO json 경로 |
-| `--default_category` | `object` | label이 비어있는 shape에 대신 쓸 카테고리 이름 |
-
 ## 참고 문헌
 
 - Kim, S., Lee, S., Ryu, H., Chung, J.S., Senocak, A. "See & Sniff: Learning Visuo-Olfactory
