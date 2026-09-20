@@ -42,10 +42,6 @@ keyward, clip 필터링 부분은 "See & Sniff" (ECCV 2026) 논문의 SmellNet-V
 
 ```
 
-## 요구 사항
-
-- Python 3.10 이상
-- (optional) NVIDIA GPU + CUDA — 없어도 CPU로 동작하지만 2단계(자동 어노테이션)가 느립니다.
 
 ## 설치
 
