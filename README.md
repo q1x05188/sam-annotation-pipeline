@@ -49,13 +49,13 @@ keyward, clip 필터링 부분은 "See & Sniff" (ECCV 2026) 논문의 SmellNet-V
 pip install -r requirements.txt
 ```
 
-`segment-anything`은 pip 공식 배포가 없어 GitHub에서 직접 설치합니다:
+`segment-anything`은 pip 공식 배포가 없어 직접 설치합니다.
 
 ```bash
 pip install git+https://github.com/facebookresearch/segment-anything.git
 ```
 
-SAM 체크포인트(모델 가중치)는 용량이 커서 저장소에 포함하지 않았습니다. 아래에서 받아 프로젝트 루트에 둡니다.
+SAM 체크포인트 크기가 크기 때문에 아래에서 받습니다.
 
 ```
 Invoke-WebRequest -Uri "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth" -OutFile "sam_vit_b_01ec64.pth"
@@ -78,8 +78,8 @@ python crawling_localization.py `
 ```
 
 - `--exclude_urls_json`: 이미 보유한 URL은 다시 받지 않음
-- `--record_urls_json`: 이번에 새로 받은 URL을 기록 (다음 실행 때 exclude 목록에 추가해서 누적 관리)
-- 여러 검색어(맥락)를 한 번에 돌리려면 `--use_contexts --contexts "pear" "pear on a tree" "sliced pear"` 사용
+- `--record_urls_json`: 이번에 새로 받은 URL을 기록 (다음 실행 때 exclude 목록에 추가해서 누적으로 진행)
+- 여러 검색어를 한 번에 돌리려면 `--use_contexts --contexts "pear" "pear on a tree" "sliced pear"` 사용
 
 여러 검색어를 한 번에 크롤링하려면 `--use_contexts`와 `--contexts`를 사용합니다:
 
@@ -94,7 +94,7 @@ python crawling_localization.py `
     --record_urls_json crawled_urls.json
 ```
 - `--exclude_urls_json train_urls.json test_urls.json`은 예시이므로 초기엔 지우고 사용하였다가
-- 만들어진 url 링크 json 파일명으로 재사용하면서 누적하면 됩니다.
+- 만들어진 url 링크 json 파일명으로 재사용하면서 누적하며 사용하면 됩니다.
 - `--contexts`에 적은 검색어마다 `./crawled/pear`, `./crawled/apple`, `./crawled/banana` 처럼 하위 폴더가 자동 생성됩니다.
 - `--max_num_per_context`는 검색어 **하나당** 최대 다운로드 개수입니다 (전체 합계가 아님).
 
@@ -105,24 +105,24 @@ python clip_filter.py --image_dir ./crawled/pear --keyword "pear" --margin 2.0
 ```
 
 See & Sniff 논문 Supplementary Figure 9의 프롬프트를 그대로 사용해서 category(카테고리
-일치),photorealism(사실적인 사진인지),freshness(정상 상태인지) 3가지를 CLIP으로 검증합니다.
+일치 여부),photorealism(사실적인 사진인지),freshness(정상 상태인지) 3가지를 CLIP으로 검증합니다.
 탈락한 이미지는 삭제되지 않고 `./crawled/pear/rejected/`로 이동되고 3단계(SAM)는 이 폴더를
 자동으로 건너뜁니다.
 
-논문 원문 그대로는 아래 옵션 없이 실행하면 되고 너무 많이 탈락하면 아래 옵션으로 강도를
-조절할 수 있습니다:
+논문 원문 기준은 그대로 사용하면 되고 
+통과 기준을 낮추고 싶으면 아래 옵션을 사용하면 됩니다.
 
 ```bash
 # 먼저 점수 분포를 보고 margin을 얼마로 줄지 가늠
 python clip_filter.py --image_dir ./crawled/pear --keyword "pear" --dry_run --verbose
 
-# 판정 여유값을 줘서 느슨하게
+# 코사인유사도 neg 값을 낮추어 조금 더 통과하기 쉽도록 설정 
 python clip_filter.py --image_dir ./crawled/pear --keyword "pear" --margin 2.0
 
-# 3개 중 2개만 통과해도 인정
+# 3개 중 2개만 통과해도 인정 ( 추천 X )
 python clip_filter.py --image_dir ./crawled/pear --keyword "pear" --min_tests_passed 2
 
-# 특정 테스트를 아예 빼기
+# 특정 테스트 제거
 python clip_filter.py --image_dir ./crawled/pear --keyword "pear" --skip_tests freshness
 ```
 
